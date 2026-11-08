@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TurboFetch Pro - Hyper Speed Downloader</title>
+    <meta name="google-site-verification" content="-5BDBDe_IAN_mI0WujYJAHrkbzqWF_xSbh9f6vw48TE" /> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #121212;
+            --surface-light: #1e1e1e;
+            --primary: #3b82f6; /* Electric Blue */
+            --accent: #8b5cf6; /* Violet */
+            --success: #10b981; /* Green Speed */
+            --text-main: #ffffff;
+            --text-dim: #a1a1aa;
+            --border: #27272a;
+            --radius: 12px;
+            --glow: 0 0 20px rgba(59, 130, 246, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- HEADER --- */
+        header {
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            background: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i { color: var(--primary); animation: pulse 2s infinite; }
+
+        .status-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* --- MAIN CONTAINER --- */
+        main {
+            flex: 1;
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        /* --- PLATFORM SELECTOR --- */
+        .platform-tabs {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            scrollbar-width: none;
+        }
+
+        .tab-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            padding: 12px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .tab-btn:hover { background: var(--surface-light); color: #fff; }
+        .tab-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: var(--glow);
+        }
+
+        /* --- INPUT SECTION --- */
+        .search-section {
+            background: var(--surface);
+            padding: 30px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            position: relative;
+        }
+
+        .url-input {
+            flex: 1;
+            background: var(--surface-light);
+            border: 2px solid var(--border);
+            color: #fff;
+            padding: 18px 20px;
+            border-radius: var(--radius);
+            font-size: 1.1rem;
+            outline: none;
+            transition: 0.2s;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .url-input:focus { border-color: var(--primary); }
+
+        .btn-download {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border: none;
+            color: #fff;
+            padding: 0 40px;
+            border-radius: var(--radius);
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.1s;
+            white-space: nowrap;
+        }
+
+        .btn-download:active { transform: scale(0.98); }
+
+        /* --- DASHBOARD RESULT (The Core) --- */
+        .dashboard {
+            display: none; /* Hidden default */
+            grid-template-columns: 1fr 1.5fr;
+            gap: 20px;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .media-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .thumb-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            min-height: 250px;
+            opacity: 0.8;
+            transition: 0.3s;
+        }
+
+        .media-card:hover .thumb-preview { opacity: 1; transform: scale(1.05); }
+
+        .info-panel {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 25px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .meta-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .platform-icon-lg {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: var(--surface-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--text-main);
+        }
+
+        .meta-text h2 { font-size: 1.1rem; line-height: 1.4; margin-bottom: 5px; }
+        .meta-text p { color: var(--text-dim); font-size: 0.9rem; }
+
+        /* --- TECH SPECS --- */
+        .tech-specs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+
+        .spec-item {
+            background: rgba(255,255,255,0.03);
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .spec-label { color: var(--text-dim); margin-bottom: 4px; display: block; }
+        .spec-val { color: var(--primary); font-weight: 700; }
+
+        /* --- FORMAT TABS --- */
+        .format-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .fmt-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .fmt-btn.active { background: var(--surface-light); color: #fff; }
+
+        /* --- DOWNLOAD LIST --- */
+        .download-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .dl-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.02);
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            transition: 0.2s;
+        }
+
+        .dl-item:hover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .dl-info { display: flex; flex-direction: column; }
+        .dl-res { font-weight: 700; font-size: 0.95rem; }
+        .dl-size { font-size: 0.8rem; color: var(--text-dim); }
+
+        .btn-dl-sm {
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            color: #fff;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-dl-sm:hover { background: var(--primary); border-color: var(--primary); }
+
+        /* --- FOOTER --- */
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+            margin-top: auto;
+        }
+
+        /* --- UTILS --- */
+        .hidden { display: none !important; }
+        .blink { animation: blinker 0.5s linear; }
+        
+        @keyframes blinker { 50% { opacity: 0.5; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes pulse { 0% { text-shadow: 0 0 5px var(--primary); } 50% { text-shadow: 0 0 20px var(--primary); } 100% { text-shadow: 0 0 5px var(--primary); } }
+
+        @media (max-width: 768px) {
+            .dashboard { grid-template-columns: 1fr; }
+            .input-group { flex-direction: column; }
+            .btn-download { padding: 15px; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <i class="fas fa-bolt"></i> TurboFetch
+        </div>
+        <div class="status-badge">
+            <i class="fas fa-circle-notch fa-spin"></i> SERVER ONLINE
+        </div>
+    </header>
+
+    <main>
+        <!-- Platform Tabs -->
+        <div class="platform-tabs" id="platformTabs">
+            <div class="tab-btn active" data-type="all"><i class="fas fa-globe"></i> Semua Platform</div>
+            <div class="tab-btn" data-type="youtube"><i class="fab fa-youtube"></i> YouTube</div>
+            <div class="tab-btn" data-type="tiktok"><i class="fab fa-tiktok"></i> TikTok</div>
+            <div class="tab-btn" data-type="instagram"><i class="fab fa-instagram"></i> Instagram</div>
+            <div class="tab-btn" data-type="facebook"><i class="fab fa-facebook"></i> Facebook</div>
+            <div class="tab-btn" data-type="twitter"><i class="fab fa-twitter"></i> X / Twitter</div>
+            <div class="tab-btn" data-type="whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp</div>
+        </div>
+
+        <!-- Input Section -->
+        <div class="search-section">
+            <div class="input-group">
+                <i class="fas fa-link" style="position: absolute; left: 20px; top: 22px; color: var(--text-dim);"></i>
+                <input type="text" class="url-input" id="urlInput" placeholder="Tempel link video/audio di sini..." style="padding-left: 50px;">
+                <button class="btn-download" id="processBtn">
+                    <i class="fas fa-download"></i> Ambil Sekarang
+                </button>
+            </div>
+            <p style="margin-top: 15px; font-size: 0.85rem; color: var(--text-dim);">
+                <i class="fas fa-check-circle" style="color: var(--success);"></i> Mendukung format MP4, MP3, WEBM, AAC, JPG, GIF. Cepat & Tanpa Batas.
+            </p>
+        </div>
+
+        <!-- Dashboard Result -->
+        <div class="dashboard" id="dashboard">
+            <!-- Left: Thumbnail -->
+            <div class="media-card">
+                <img src="" id="resThumb" class="thumb-preview" alt="Preview">
+                <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); padding: 5px 10px; border-radius: 4px; font-size: 0.8rem;">
+                    <i class="fas fa-eye"></i> <span id="resViews">0</span>
+                </div>
+            </div>
+
+            <!-- Right: Details & Options -->
+            <div class="info-panel">
+                <div class="meta-header">
+                    <div class="platform-icon-lg" id="pfIcon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div class="meta-text">
+                        <div style="font-size: 0.75rem; color: var(--success); margin-bottom: 5px; font-weight: 700;">
+                            <i class="fas fa-check-double"></i> LINK TERVERIFIKASI
+                        </div>
+                        <h2 id="resTitle">Analisis Media...</h2>
+                        <p id="resSource">Sumber: Deteksi Otomatis</p>
+                    </div>
+                </div>
+
+                <!-- Tech Specs (Fake but realistic) -->
+                <div class="tech-specs">
+                    <div class="spec-item">
+                        <span class="spec-label">DURASI</span>
+                        <span class="spec-val" id="specDur">--:--</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">SIZE</span>
+                        <span class="spec-val" id="specSize">-- MB</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">CODEC</span>
+                        <span class="spec-val">H.264/AAC</span>
+                    </div>
+                </div>
+
+                <!-- Format Switcher -->
+                <div class="format-tabs">
+                    <button class="fmt-btn active" onclick="switchFormat('video', this)">Video (MP4)</button>
+                    <button class="fmt-btn" onclick="switchFormat('audio', this)">Audio (MP3)</button>
+                    <button class="fmt-btn" onclick="switchFormat('image', this)">Gambar (JPG)</button>
+                    <button class="fmt-btn" onclick="switchFormat('other', this)">Lainnya</button>
+                </div>
+
+                <!-- List -->
+                <div class="download-list" id="dlList">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        &copy; 2023 TurboFetch Technology. High-Speed Media Processor.
+    </footer>
+
+    <script>
+        // --- DATA CONFIG ---
+        const platforms = {
+            youtube: { name: 'YouTube', icon: 'fab fa-youtube', color: '#ff0000' },
+            tiktok: { name: 'TikTok', icon: 'fab fa-tiktok', color: '#000000' },
+            instagram: { name: 'Instagram', icon: 'fab fa-instagram', color: '#E1306C' },
+            facebook: { name: 'Facebook', icon: 'fab fa-facebook', color: '#1877F2' },
+            twitter: { name: 'X / Twitter', icon: 'fab fa-twitter', color: '#ffffff' },
+            whatsapp: { name: 'WhatsApp', icon: 'fab fa-whatsapp', color: '#25D366' },
+            default: { name: 'Web Media', icon: 'fas fa-link', color: '#3b82f6' }
+        };
+
+        const patterns = {
+            youtube: /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/,
+            instagram: /instagram\.com/,
+            facebook: /facebook\.com|fb\.watch/,
+            tiktok: /tiktok\.com/,
+            twitter: /twitter\.com|x\.com/,
+            whatsapp: /whatsapp\.com|wa\.me/
+        };
+
+        // --- DOM ELEMENTS ---
+        const urlInput = document.getElementById('urlInput');
+        const processBtn = document.getElementById('processBtn');
+        const dashboard = document.getElementById('dashboard');
+        const dlList = document.getElementById('dlList');
+        
+        // --- UI UPDATERS ---
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                urlInput.placeholder = `Tempel link dari ${e.currentTarget.innerText}...`;
+                urlInput.focus();
+            });
+        });
+
+        // --- MAIN PROCESSING LOGIC (LIGHTNING FAST) ---
+        processBtn.addEventListener('click', () => {
+            const url = urlInput.value.trim();
+            if(!url) {
+                alert("Mohon masukkan link!");
+                return;
+            }
+
+            // 1. Detect Platform Instantly
+            let detected = platforms.default;
+            let id = null;
+            for (const [key, regex] of Object.entries(patterns)) {
+                const match = url.match(regex);
+                if (match) {
+                    detected = platforms[key];
+                    id = match[1];
+                    break;
+                }
+            }
+
+            // 2. Simulate "Instant" Data Fetching
+            updateUI(detected, url, id);
+        });
+
+        function updateUI(platform, url, id) {
+            // Show Dashboard Immediately
+            dashboard.style.display = 'grid';
+            dashboard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Update Header Info
+            const iconContainer = document.getElementById('pfIcon');
+            iconContainer.innerHTML = `<i class="${platform.icon}"></i>`;
+            iconContainer.style.color = platform.color;
+            document.getElementById('resSource').innerText = `Sumber: ${platform.name} • Terverifikasi`;
+            document.getElementById('resTitle').innerText = `Media dari ${new URL(url).hostname}`;
+
+            // Thumbnail Logic
+            let thumbUrl = `https://picsum.photos/seed/${Date.now()}/600/400`;
+            if(platform.name === 'YouTube' && id) {
+                thumbUrl = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+            } else if (platform.name === 'Instagram') {
+                thumbUrl = `https://picsum.photos/seed/insta/600/400`; // Placeholder logic
+            }
+            document.getElementById('resThumb').src = thumbUrl;
+
+            // Random Tech Specs
+            document.getElementById('resViews').innerText = Math.floor(Math.random() * 5000000).toLocaleString();
+            const mins = Math.floor(Math.random() * 10) + 1;
+            document.getElementById('specDur').innerText = `0${mins}:${Math.floor(Math.random()*60)}`;
+            document.getElementById('specSize').innerText = (Math.random() * 100 + 5).toFixed(1) + ' MB';
+
+            // Populate List (Default Video)
+            renderList('video');
+        }
+
+        // --- FORMAT GENERATOR ---
+        function renderList(type) {
+            dlList.innerHTML = '';
+            
+            let data = [];
+            
+            if (type === 'video') {
+                data = [
+                    { res: '4K UHD', size: '850.5 MB', note: 'H.265/60fps' },
+                    { res: '1080p FHD', size: '124.2 MB', note: 'H.264/30fps' },
+                    { res: '720p HD', size: '65.4 MB', note: 'H.264/30fps' },
+                    { res: '480p SD', size: '32.1 MB', note: 'Mobile Optimized' },
+                    { res: 'WEBM', size: '30.0 MB', note: 'Transparansi' }
+                ];
+            } else if (type === 'audio') {
+                data = [
+                    { res: 'MP3 320kbps', size: '12.5 MB', note: 'High Quality' },
+                    { res: 'MP3 128kbps', size: '5.2 MB', note: 'Standard' },
+                    { res: 'M4A AAC', size: '4.8 MB', note: 'Apple Compatible' },
+                    { res: 'WAV Lossless', size: '45.0 MB', note: 'Studio' }
+                ];
+            } else if (type === 'image') {
+                data = [
+                    { res: 'JPG Original', size: '2.5 MB', note: 'Full Quality' },
+                    { res: 'PNG Lossless', size: '4.1 MB', note: 'Transparent' },
+                    { res: 'WEBP', size: '1.2 MB', note: 'Modern Web' }
+                ];
+            } else {
+                data = [
+                    { res: 'GIF Animated', size: '8.5 MB', note: 'Loop' },
+                    { res: 'MP3 Voice', size: '0.5 MB', note: 'Extracted' }
+                ];
+            }
+
+            // Generate HTML Items
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'dl-item';
+                div.innerHTML = `
+                    <div class="dl-info">
+                        <span class="dl-res">${item.res}</span>
+                        <span class="dl-size">${item.size} • ${item.note}</span>
+                    </div>
+                    <button class="btn-dl-sm" onclick="triggerDownload('${item.res}')">
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                `;
+                dlList.appendChild(div);
+            });
+        }
+
+        function switchFormat(type, btn) {
+            document.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Effect blink on list
+            dlList.style.opacity = '0';
+            setTimeout(() => {
+                renderList(type);
+                dlList.style.opacity = '1';
+            }, 200);
+        }
+
+        function triggerDownload(name) {
+            const btn = event.currentTarget;
+            const icon = btn.querySelector('i');
+            
+            // Visual Feedback
+            icon.className = 'fas fa-circle-notch fa-spin';
+            btn.style.color = 'var(--success)';
+            
+            setTimeout(() => {
+                icon.className = 'fas fa-check';
+                setTimeout(() => {
+                    icon.className = 'fas fa-arrow-down';
+                    btn.style.color = '#fff';
+                    // In a real app, window.location.href = downloadLink;
+                    alert(`Mengunduh file ${name}... (Simulasi Selesai)`);
+                }, 1000);
+            }, 800);
+        }
+
+        // Paste Shortcut
+        urlInput.addEventListener('paste', () => {
+            setTimeout(() => {
+                processBtn.click();
+            }, 100);
+        });
+
+    </script>
+</body>
+</html>
